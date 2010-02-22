@@ -166,7 +166,6 @@ cd -
 rm -rf $RPM_BUILD_ROOT
 
 %post
-/sbin/ldconfig
 /sbin/chkconfig --add dirsrv
 /sbin/chkconfig --add dirsrv-snmp
 if [ ! -e %{_localstatedir}/run/dirsrv ]; then
@@ -180,8 +179,6 @@ if [ "$1" = 0 ]; then
 	%service dirsrv-snmp stop
 	/sbin/chkconfig --del dirsrv-snmp
 fi
-
-%postun -p /sbin/ldconfig
 
 %post selinux
 if [ "$1" -le "1" ] ; then # First install
