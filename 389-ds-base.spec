@@ -56,7 +56,7 @@ Requires(post):	/sbin/chkconfig
 Requires(preun):	/sbin/chkconfig
 Requires(preun):	/sbin/service
 
-Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{?prerel}.tar.bz2
+Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{prerel}.tar.bz2
 # Source0-md5:	aa9299aa66b09f89ed80dd0cfeebde55
 
 %description
