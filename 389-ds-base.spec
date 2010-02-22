@@ -1,15 +1,21 @@
+# TODO
+# - selinux_variants macro missing. something from fedora?
+#
+# Conditional build:
+%bcond_with	selinux		# build with selinu
 
-%define prerel .a1
+%define		subver	.a1
+%define		rel		0.1
 
 Summary:	389 Directory Server (base)
 Name:		389-ds-base
 Version:	1.2.6
-Release:	1%{?prerel}
-License:	GPLv2 with exceptions
+Release:	0%{?subver}.%{rel}
+License:	GPL v2 with exceptions
 Group:		Daemons
 URL:		http://directory.fedoraproject.org/
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
-
+Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{subver}.tar.bz2
+# Source0-md5:	aa9299aa66b09f89ed80dd0cfeebde55
 BuildRequires:	cyrus-sasl-devel
 BuildRequires:	db4.5-devel
 BuildRequires:	icu
@@ -20,6 +26,7 @@ BuildRequires:	nspr-devel
 BuildRequires:	nss-devel
 BuildRequires:	pcre-devel
 BuildRequires:	svrcore-devel
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 # The following are needed to build the snmp ldap-agent
 BuildRequires:	net-snmp-devel
 %ifnarch sparc sparc64 ppc ppc64 s390 s390x
@@ -30,34 +37,28 @@ BuildRequires:	openssl-devel
 BuildRequires:	tcp_wrappers
 BuildRequires:	zlib-devel
 # The following are needed to build the SELinux policy
-#BuildRequires:    checkpolicy
-#BuildRequires:    policycoreutils
+%if %{with selinux}
+BuildRequires:	checkpolicy
+BuildRequires:	policycoreutils
+%endif
 # the following is for the pam passthru auth plug-in
 BuildRequires:	pam-devel
-
 # the following are needed for some of our scripts
 Requires:	mozldap-tools
 Requires:	perl-Mozilla-LDAP
-
 # this is needed to setup SSL if you are not using the
 # administration server package
 Requires:	nss-tools
-
 # these are not found by the auto-dependency method
 # they are required to support the mandatory LDAP SASL mechs
-Requires:	cyrus-sasl-gssapi
 Requires:	cyrus-sasl-digest-md5
-
+Requires:	cyrus-sasl-gssapi
 # this is needed for verify-db.pl
-Requires:	db4.5-utils
-
+Requires:	db-utils
 # for the init script
 Requires(post):	/sbin/chkconfig
 Requires(preun):	/sbin/chkconfig
 Requires(preun):	/sbin/service
-
-Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{prerel}.tar.bz2
-# Source0-md5:	aa9299aa66b09f89ed80dd0cfeebde55
 
 %description
 389 Directory Server is an LDAPv3 compliant server. The base package
@@ -74,51 +75,47 @@ Requires:	mozldap-devel
 Development Libraries and headers for the 389 Directory Server base
 package.
 
-%if 0
-%package          selinux
+%package selinux
 Summary:	SELinux policy for 389 Directory Server
 Group:		Daemons
 Requires:	%{name} = %{version}-%{release}
 Requires:	selinux-policy
 
-%description      selinux
+%description selinux
 SELinux policy for the 389 Directory Server base package.
 
-%package          selinux-devel
+%package selinux-devel
 Summary:	Development interface for 389 Directory Server base SELinux policy
 Group:		Development/Libraries
 
-%description      selinux-devel
+%description selinux-devel
 SELinux policy interface for the 389 Directory Server base package.
-%endif
 
-SELinux policy interface for the 389 Directory Server base package.
 %prep
-%setup -q -n %{name}-%{version}%{?prerel}
+%setup -q -n %{name}-%{version}%{?subver}
 
 %build
 %configure \
 	--enable-autobind \
 	--without-kerberos \
-	# --with-selinux
+	%{?with_selinux:--with-selinux}
 
 # Generate symbolic info for debuggers
-export XCFLAGS=$RPM_OPT_FLAGS
+export XCFLAGS="%{rpmcflags}"
 
 %ifarch x86_64 ppc64 ia64 s390x sparc64
 export USE_64=1
 %endif
 
-%{__make} %{?_smp_mflags}
+%{__make}
 
-%if 0
+%if %{with selinux}
 # Build the SELinux policy module for each variant
 cd selinux-built
-for selinuxvariant in %{selinux_variants}
-do
-%{__make} NAME=${selinuxvariant} -f %{_datadir}/selinux/devel/Makefile
-  mv dirsrv.pp dirsrv.pp.${selinuxvariant}
-%{__make} NAME=${selinuxvariant} -f %{_datadir}/selinux/devel/Makefile clean
+for selinuxvariant in %{selinux_variants}; do
+	%{__make} NAME=${selinuxvariant} -f %{_datadir}/selinux/devel/Makefile
+	mv dirsrv.pp dirsrv.pp.${selinuxvariant}
+	%{__make} NAME=${selinuxvariant} -f %{_datadir}/selinux/devel/Makefile clean
 done
 cd -
 %endif
@@ -126,14 +123,15 @@ cd -
 %install
 rm -rf $RPM_BUILD_ROOT
 
-%{__make} DESTDIR="$RPM_BUILD_ROOT" install
+%{__make} install \
+	DESTDIR=$RPM_BUILD_ROOT
 
 install -d $RPM_BUILD_ROOT/var/log/dirsrv
 install -d $RPM_BUILD_ROOT/var/lib/dirsrv
 install -d $RPM_BUILD_ROOT/var/lock/dirsrv
 install -d $RPM_BUILD_ROOT%{_includedir}/dirsrv
 
-#remove libtool and static libs
+# remove libtool and static libs
 rm -f $RPM_BUILD_ROOT%{_libdir}/dirsrv/*.a
 rm -f $RPM_BUILD_ROOT%{_libdir}/dirsrv/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/dirsrv/plugins/*.a
@@ -145,14 +143,13 @@ install -p ldap/servers/plugins/replication/winsync-plugin.h $RPM_BUILD_ROOT%{_i
 # make sure perl scripts have a proper shebang
 sed -i -e 's|#{{PERL-EXEC}}|#!/usr/bin/perl|' $RPM_BUILD_ROOT%{_datadir}/dirsrv/script-templates/template-*.pl
 
-%if 0
+%if %{with selinux}
 # Install the SELinux policy
 cd selinux-built
-for selinuxvariant in %{selinux_variants}
-do
-  install -d $RPM_BUILD_ROOT%{_datadir}/selinux/${selinuxvariant}
-  install -p -m 644 dirsrv.pp.${selinuxvariant} \
-    $RPM_BUILD_ROOT%{_datadir}/selinux/${selinuxvariant}/dirsrv.pp
+for selinuxvariant in %{selinux_variants}; do
+	install -d $RPM_BUILD_ROOT%{_datadir}/selinux/${selinuxvariant}
+	install -p -m 644 dirsrv.pp.${selinuxvariant} \
+	$RPM_BUILD_ROOT%{_datadir}/selinux/${selinuxvariant}/dirsrv.pp
 done
 cd -
 
@@ -169,67 +166,62 @@ cd -
 rm -rf $RPM_BUILD_ROOT
 
 %post
-/sbin/chkconfig --add dirsrv
 /sbin/ldconfig
+/sbin/chkconfig --add dirsrv
 /sbin/chkconfig --add dirsrv-snmp
 if [ ! -e %{_localstatedir}/run/dirsrv ]; then
-    mkdir %{_localstatedir}/run/dirsrv
+	mkdir %{_localstatedir}/run/dirsrv
 fi
 
 %preun
-if [ $1 = 0 ]; then
-        %service dirsrv stop >/dev/null 2>&1 || :
-        /sbin/chkconfig --del dirsrv
-        %service dirsrv-snmp stop >/dev/null 2>&1 || :
-        /sbin/chkconfig --del dirsrv-snmp
+if [ "$1" = 0 ]; then
+	%service dirsrv stop
+	/sbin/chkconfig --del dirsrv
+	%service dirsrv-snmp stop
+	/sbin/chkconfig --del dirsrv-snmp
 fi
 
 %postun -p /sbin/ldconfig
 
-%if 0
 %post selinux
 if [ "$1" -le "1" ] ; then # First install
-for selinuxvariant in %{selinux_variants}
-do
-  semodule -s ${selinuxvariant} -i %{_datadir}/selinux/${selinuxvariant}/dirsrv.pp 2>/dev/null || :
-done
-fixfiles -R %{name} restore || :
-/sbin/service dirsrv condrestart > /dev/null 2>&1 || :
-/sbin/service dirsrv-snmp condrestart > /dev/null 2>&1 || :
+	for selinuxvariant in %{selinux_variants}; do
+		semodule -s ${selinuxvariant} -i %{_datadir}/selinux/${selinuxvariant}/dirsrv.pp 2>/dev/null || :
+	done
+	fixfiles -R %{name} restore || :
+	/sbin/service dirsrv condrestart > /dev/null 2>&1 || :
+	/sbin/service dirsrv-snmp condrestart > /dev/null 2>&1 || :
 fi
 
 %preun selinux
 if [ "$1" -lt "1" ]; then # Final removal
-for selinuxvariant in %{selinux_variants}
-do
-  semodule -s ${selinuxvariant} -r dirsrv 2>/dev/null || :
-done
-fixfiles -R %{name} restore || :
-%service dirsrv condrestart > /dev/null 2>&1 || :
-%service dirsrv-snmp condrestart > /dev/null 2>&1 || :
+	for selinuxvariant in %{selinux_variants}; do
+		semodule -s ${selinuxvariant} -r dirsrv 2>/dev/null || :
+	done
+	fixfiles -R %{name} restore || :
+	%service dirsrv condrestart > /dev/null 2>&1 || :
+	%service dirsrv-snmp condrestart > /dev/null 2>&1 || :
 fi
 
 %postun selinux
 if [ "$1" -ge "1" ]; then # Upgrade
-for selinuxvariant in %{selinux_variants}
-do
-  semodule -s ${selinuxvariant} -i %{_datadir}/selinux/${selinuxvariant}/dirsrv.pp 2>/dev/null || :
-done
+	for selinuxvariant in %{selinux_variants}; do
+		semodule -s ${selinuxvariant} -i %{_datadir}/selinux/${selinuxvariant}/dirsrv.pp 2>/dev/null || :
+	done
 fi
-%endif
 
 %files
 %defattr(644,root,root,755)
 %doc LICENSE EXCEPTION LICENSE.GPLv2
 %dir %{_sysconfdir}/dirsrv
 %dir %{_sysconfdir}/dirsrv/schema
-%config(noreplace)%{_sysconfdir}/dirsrv/schema/*.ldif
 %dir %{_sysconfdir}/dirsrv/config
-%config(noreplace)%{_sysconfdir}/dirsrv/config/slapd-collations.conf
-%config(noreplace)%{_sysconfdir}/dirsrv/config/certmap.conf
-%config(noreplace)%{_sysconfdir}/dirsrv/config/ldap-agent.conf
-%config(noreplace)%{_sysconfdir}/dirsrv/config/template-initconfig
-%config(noreplace)%verify(not md5 mtime size) /etc/sysconfig/dirsrv
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/dirsrv/schema/*.ldif
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/dirsrv/config/slapd-collations.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/dirsrv/config/certmap.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/dirsrv/config/ldap-agent.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/dirsrv/config/template-initconfig
+%config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/dirsrv
 %{_datadir}/dirsrv
 %attr(754,root,root) /etc/rc.d/init.d/dirsrv
 %attr(754,root,root) /etc/rc.d/init.d/dirsrv-snmp
@@ -251,7 +243,7 @@ fi
 %{_includedir}/dirsrv
 %{_libdir}/dirsrv/*.so
 
-%if 0
+%if %{with selinux}
 %files selinux
 %defattr(644,root,root,755)
 %{_datadir}/selinux/*/dirsrv.pp
@@ -259,5 +251,4 @@ fi
 %files selinux-devel
 %defattr(644,root,root,755)
 %{_datadir}/dirsrv-selinux
-
 %endif
