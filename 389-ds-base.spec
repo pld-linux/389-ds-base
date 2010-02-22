@@ -174,7 +174,7 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --add dirsrv-snmp
 if [ ! -e %{_localstatedir}/run/dirsrv ]; then
     mkdir %{_localstatedir}/run/dirsrv
-end
+fi
 
 %preun
 if [ $1 = 0 ]; then
