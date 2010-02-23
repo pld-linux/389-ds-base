@@ -11,7 +11,7 @@
 Summary:	389 Directory Server (base)
 Name:		389-ds-base
 Version:	1.2.6
-Release:	0%{?subver}.%{rel}
+Release:	0%{subver}.%{rel}
 License:	GPL v2 with exceptions
 Group:		Daemons
 URL:		http://directory.fedoraproject.org/
@@ -22,10 +22,14 @@ BuildRequires:	db-devel
 BuildRequires:	icu
 BuildRequires:	libicu-devel
 BuildRequires:	libnl-devel
+BuildRequires:	libstdc++-devel
 BuildRequires:	mozldap-devel
 BuildRequires:	nspr-devel
 BuildRequires:	nss-devel
 BuildRequires:	pcre-devel
+BuildRequires:	perl-devel
+BuildRequires:	pkgconfig
+BuildRequires:	rpm-pythonprov
 BuildRequires:	rpmbuild(macros) >= 1.268
 BuildRequires:	svrcore-devel
 %ifnarch sparc sparc64 ppc ppc64 s390 s390x
@@ -92,7 +96,7 @@ Group:		Development/Libraries
 SELinux policy interface for the 389 Directory Server base package.
 
 %prep
-%setup -q -n %{name}-%{version}%{?subver}
+%setup -q -n %{name}-%{version}%{subver}
 
 %build
 %configure \
