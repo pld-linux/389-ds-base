@@ -2,7 +2,7 @@
 # - selinux_variants macro missing. something from fedora?
 #
 # Conditional build:
-%bcond_with	selinux		# build with selinu
+%bcond_with	selinux		# build with selinux
 
 %define		subver	.a1
 %define		rel		0.1
@@ -17,7 +17,7 @@ URL:		http://directory.fedoraproject.org/
 Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{subver}.tar.bz2
 # Source0-md5:	aa9299aa66b09f89ed80dd0cfeebde55
 BuildRequires:	cyrus-sasl-devel
-BuildRequires:	db4.5-devel
+BuildRequires:	db-devel
 BuildRequires:	icu
 BuildRequires:	libicu-devel
 BuildRequires:	libnl-devel
@@ -25,10 +25,8 @@ BuildRequires:	mozldap-devel
 BuildRequires:	nspr-devel
 BuildRequires:	nss-devel
 BuildRequires:	pcre-devel
+BuildRequires:	rpmbuild(macros) >= 1.268
 BuildRequires:	svrcore-devel
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
-# The following are needed to build the snmp ldap-agent
-BuildRequires:	net-snmp-devel
 %ifnarch sparc sparc64 ppc ppc64 s390 s390x
 BuildRequires:	lm_sensors-devel
 %endif
@@ -36,6 +34,8 @@ BuildRequires:	bzip2-devel
 BuildRequires:	openssl-devel
 BuildRequires:	tcp_wrappers
 BuildRequires:	zlib-devel
+# The following are needed to build the snmp ldap-agent
+BuildRequires:	net-snmp-devel
 # The following are needed to build the SELinux policy
 %if %{with selinux}
 BuildRequires:	checkpolicy
@@ -54,18 +54,17 @@ Requires:	nss-tools
 Requires:	cyrus-sasl-digest-md5
 Requires:	cyrus-sasl-gssapi
 # this is needed for verify-db.pl
+Requires(post,preun):	/sbin/chkconfig
 Requires:	db-utils
-# for the init script
-Requires(post):	/sbin/chkconfig
-Requires(preun):	/sbin/chkconfig
-Requires(preun):	/sbin/service
+Requires:	rc-scripts
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
 389 Directory Server is an LDAPv3 compliant server. The base package
 includes the LDAP server and command line utilities for server
 administration.
 
-%package          devel
+%package devel
 Summary:	Development libraries for 389 Directory Server
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
@@ -169,7 +168,7 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --add dirsrv
 /sbin/chkconfig --add dirsrv-snmp
 if [ ! -e %{_localstatedir}/run/dirsrv ]; then
-	mkdir %{_localstatedir}/run/dirsrv
+	install -d %{_localstatedir}/run/dirsrv
 fi
 
 %preun
