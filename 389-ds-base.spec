@@ -1,5 +1,6 @@
 # TODO
 # - selinux_variants macro missing. something from fedora?
+# - merge with fedora-ds-base.spec
 #
 # Conditional build:
 %bcond_with	selinux		# build with selinux
