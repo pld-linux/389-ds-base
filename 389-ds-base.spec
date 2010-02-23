@@ -19,7 +19,6 @@ Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{subver}.
 # Source0-md5:	aa9299aa66b09f89ed80dd0cfeebde55
 BuildRequires:	cyrus-sasl-devel
 BuildRequires:	db-devel
-BuildRequires:	icu
 BuildRequires:	libicu-devel
 BuildRequires:	libnl-devel
 BuildRequires:	libstdc++-devel
@@ -37,7 +36,6 @@ BuildRequires:	lm_sensors-devel
 %endif
 BuildRequires:	bzip2-devel
 BuildRequires:	openssl-devel
-BuildRequires:	tcp_wrappers
 BuildRequires:	zlib-devel
 # The following are needed to build the snmp ldap-agent
 BuildRequires:	net-snmp-devel
