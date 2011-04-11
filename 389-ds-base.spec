@@ -5,18 +5,18 @@
 # Conditional build:
 %bcond_with	selinux		# build with selinux
 
-%define		subver	.a1
-%define		rel		0.1
+#%define		subver	.a1
+#%define		rel		0.1
 
 Summary:	389 Directory Server (base)
 Name:		389-ds-base
-Version:	1.2.6
-Release:	0%{subver}.%{rel}
+Version:	1.2.8.1
+Release:	0
 License:	GPL v2 with exceptions
 Group:		Daemons
 URL:		http://directory.fedoraproject.org/
-Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}%{subver}.tar.bz2
-# Source0-md5:	aa9299aa66b09f89ed80dd0cfeebde55
+Source0:	http://directory.fedoraproject.org/sources/%{name}-%{version}.tar.bz2
+# Source0-md5:	d12829ca71b28222fbe66b0939d2af4f
 BuildRequires:	cyrus-sasl-devel
 BuildRequires:	db-devel
 BuildRequires:	libicu-devel
@@ -94,7 +94,7 @@ Group:		Development/Libraries
 SELinux policy interface for the 389 Directory Server base package.
 
 %prep
-%setup -q -n %{name}-%{version}%{subver}
+%setup -q
 
 %build
 %configure \
@@ -241,6 +241,7 @@ fi
 %defattr(644,root,root,755)
 %{_includedir}/dirsrv
 %{_libdir}/dirsrv/*.so
+%{_pkgconfigdir}/dirsrv.pc
 
 %if %{with selinux}
 %files selinux
