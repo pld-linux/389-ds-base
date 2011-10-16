@@ -25,6 +25,7 @@ BuildRequires:	libstdc++-devel
 BuildRequires:	mozldap-devel
 BuildRequires:	nspr-devel
 BuildRequires:	nss-devel
+BuildRequires:	pciutils-devel
 BuildRequires:	pcre-devel
 BuildRequires:	perl-devel
 BuildRequires:	pkgconfig
